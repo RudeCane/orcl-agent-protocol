@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORCL — Autonomous AI Agents for Crypto</title>
+    <meta name="description" content="Deploy autonomous AI agents that observe, analyze, and execute crypto trades across Base, Ethereum, and BNB Chain. Open source.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #141518;
+            --bg-2: #1a1d22;
+            --bg-3: #22262d;
+            --bg-4: #2a2f38;
+            --border: #2a2f38;
+            --text: #f0f2f7;
+            --text-2: #a0a8ba;
+            --text-3: #636b80;
+            --cyan: #00ccee;
+            --cyan-dark: #0099bb;
+            --cyan-glow: rgba(0, 204, 238, 0.15);
+            --green: #34d399;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --purple: #a78bfa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg);
+            color: var(--text-2);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── NOISE TEXTURE ── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 0 48px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(20, 21, 24, 0.8);
+            backdrop-filter: blur(24px) saturate(1.3);
+            border-bottom: 1px solid #ffffff08;
+        }
+
+        .nav-logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 20px;
+            letter-spacing: 6px;
+            background: linear-gradient(135deg, var(--cyan), #33ddff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links { display: flex; align-items: center; gap: 32px; }
+
+        .nav-links a {
+            color: var(--text-3);
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        .nav-cta {
+            background: var(--cyan) !important;
+            color: var(--bg) !important;
+            padding: 9px 24px !important;
+            border-radius: 6px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 1.5px;
+            font-size: 11px !important;
+            transition: all 0.2s;
+        }
+
+        .nav-cta:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 20px var(--cyan-glow); }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            overflow: hidden;
+        }
+
+        /* Orbital rings */
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            border: 1px solid #00ccee08;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: orbit-spin 60s linear infinite;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            border: 1px solid #00ccee06;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: orbit-spin 45s linear infinite reverse;
+        }
+
+        @keyframes orbit-spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        .hero-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .hero-tag {
+            position: relative;
+            z-index: 10;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            background: var(--cyan-glow);
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: 1px solid #00ccee20;
+            margin-bottom: 32px;
+            font-weight: 500;
+            animation: fadeUp 0.8s ease both;
+        }
+
+        .hero-title {
+            position: relative;
+            z-index: 10;
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(48px, 8vw, 96px);
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+            color: var(--text);
+            margin-bottom: 24px;
+            animation: fadeUp 0.8s ease 0.1s both;
+        }
+
+        .hero-title .highlight {
+            background: linear-gradient(135deg, var(--cyan), #66eeff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            position: relative;
+            z-index: 10;
+            font-size: 16px;
+            color: var(--text-3);
+            max-width: 560px;
+            line-height: 1.8;
+            margin-bottom: 48px;
+            animation: fadeUp 0.8s ease 0.2s both;
+        }
+
+        .hero-actions {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 16px;
+            animation: fadeUp 0.8s ease 0.3s both;
+        }
+
+        .btn {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            padding: 14px 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan-dark), var(--cyan));
+            color: #0a0f14;
+            box-shadow: 0 4px 24px var(--cyan-glow);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0, 204, 238, 0.25); filter: brightness(1.1); }
+
+        .btn-secondary {
+            background: var(--bg-3);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { background: var(--bg-4); border-color: var(--text-3); transform: translateY(-2px); }
+
+        .hero-stats {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 48px;
+            margin-top: 72px;
+            animation: fadeUp 0.8s ease 0.5s both;
+        }
+
+        .hero-stat-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .hero-stat-label {
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── FEATURES ── */
+        .section {
+            position: relative;
+            z-index: 10;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 100px 24px;
+        }
+
+        .section-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 14px;
+            color: var(--text-3);
+            max-width: 500px;
+            line-height: 1.7;
+            margin-bottom: 56px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .feature-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px 28px;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: #ffffff15;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: var(--text-3);
+            line-height: 1.7;
+        }
+
+        /* ── HOW IT WORKS ── */
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        .flow-steps::before {
+            content: '';
+            position: absolute;
+            left: 23px;
+            top: 48px;
+            bottom: 48px;
+            width: 1px;
+            background: linear-gradient(to bottom, var(--cyan), var(--green), var(--purple));
+            opacity: 0.3;
+        }
+
+        .flow-step {
+            display: flex;
+            gap: 28px;
+            align-items: flex-start;
+            padding: 28px 0;
+        }
+
+        .flow-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--cyan);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .flow-content { flex: 1; }
+
+        .flow-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .flow-desc {
+            font-size: 13px;
+            color: var(--text-3);
+            line-height: 1.7;
+            max-width: 480px;
+        }
+
+        /* ── CODE BLOCK ── */
+        .code-section {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-top: 56px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+        }
+
+        .code-label {
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+        }
+
+        .code-block {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            line-height: 2;
+            color: var(--text-2);
+        }
+
+        .code-block .cmd { color: var(--cyan); }
+        .code-block .comment { color: var(--text-3); }
+
+        /* ── CHAINS ── */
+        .chains-strip {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .chain-pill {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .chain-pill:hover { border-color: var(--cyan); transform: translateY(-2px); }
+
+        .chain-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        /* ── WARNING ── */
+        .warning-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .warning-box {
+            background: #f8717108;
+            border: 1px solid #f8717118;
+            border-radius: 12px;
+            padding: 32px 36px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .warning-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+
+        .warning-text { font-size: 12px; color: #f8a0a0; line-height: 1.8; }
+        .warning-text strong { color: var(--red); }
+
+        /* ── FOOTER ── */
+        footer {
+            position: relative;
+            z-index: 10;
+            border-top: 1px solid var(--border);
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: 6px;
+            color: var(--text-3);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .footer-links a {
+            color: var(--text-3);
+            text-decoration: none;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover { color: var(--cyan); }
+
+        .footer-copy {
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 0.5px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 800px) {
+            nav { padding: 0 20px; }
+            .nav-links a:not(.nav-cta) { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+            .hero-stats { flex-direction: column; gap: 24px; }
+            .hero-actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .warning-box { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <span class="nav-logo">ORCL</span>
+    <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How It Works</a>
+        <a href="#start">Get Started</a>
+        <a href="https://github.com/RudeCane/orcl-agent-protocol" target="_blank" class="nav-cta">GITHUB</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-glow"></div>
+    <span class="hero-tag">AUTONOMOUS AI AGENTS FOR CRYPTO</span>
+    <h1 class="hero-title">Deploy. <span class="highlight">Observe.</span><br>Execute.</h1>
+    <p class="hero-sub">AI agents that autonomously monitor markets, analyze conditions, and execute trades across Base, Ethereum, and BNB Chain. Open source.</p>
+    <div class="hero-actions">
+        <a href="https://github.com/RudeCane/orcl-agent-protocol" target="_blank" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            GET STARTED
+        </a>
+        <a href="#how" class="btn btn-secondary">HOW IT WORKS</a>
+    </div>
+    <div class="hero-stats">
+        <div>
+            <div class="hero-stat-val">3</div>
+            <div class="hero-stat-label">CHAINS</div>
+        </div>
+        <div>
+            <div class="hero-stat-val">5+</div>
+            <div class="hero-stat-label">AGENT TYPES</div>
+        </div>
+        <div>
+            <div class="hero-stat-val">200+</div>
+            <div class="hero-stat-label">TRADING PAIRS</div>
+        </div>
+        <div>
+            <div class="hero-stat-val">100%</div>
+            <div class="hero-stat-label">OPEN SOURCE</div>
+        </div>
+    </div>
+</section>
+
+<!-- SUPPORTED CHAINS -->
+<div style="position:relative;z-index:10;padding:0 24px 80px;text-align:center;">
+    <p style="font-size:10px;letter-spacing:3px;color:var(--text-3);margin-bottom:24px">SUPPORTED CHAINS</p>
+    <div class="chains-strip">
+        <div class="chain-pill"><div class="chain-dot"></div> Base</div>
+        <div class="chain-pill"><div class="chain-dot"></div> Ethereum</div>
+        <div class="chain-pill"><div class="chain-dot"></div> BNB Chain</div>
+        <div class="chain-pill"><div class="chain-dot" style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></div> BloFin CEX</div>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+    <div class="section-label">FEATURES</div>
+    <h2 class="section-title">Everything you need to<br>deploy autonomous agents</h2>
+    <p class="section-desc">A full-stack protocol for AI-powered crypto trading — from market observation to multi-agent coordination.</p>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="feature-icon">🔭</span>
+            <div class="feature-name">Autonomous Observation</div>
+            <div class="feature-desc">Agents fetch live market data from DexScreener and BloFin, tracking price, volume, liquidity, and buy/sell pressure in real time.</div>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🧠</span>
+            <div class="feature-name">Intelligent Analysis</div>
+            <div class="feature-desc">Score-based decision engine evaluates trend, momentum, RSI, volume ratios, and historical context to generate high-confidence signals.</div>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">⚡</span>
+            <div class="feature-name">Autonomous Execution</div>
+            <div class="feature-desc">Agents execute trades on-chain via DEX routers or through BloFin's API, with mandatory stop-losses and safety guardrails on every position.</div>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🔗</span>
+            <div class="feature-name">Multi-Agent Communication</div>
+            <div class="feature-desc">Agents signal each other through a message bus. The coordinator routes signals, delegates tasks, and runs consensus votes before high-risk trades.</div>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <div class="feature-name">Leverage Trading</div>
+            <div class="feature-desc">Built-in perpetual futures engine with position management, automatic stop-loss/take-profit, daily loss limits, and cooldown periods.</div>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🎙️</span>
+            <div class="feature-name">Voice Control</div>
+            <div class="feature-desc">Speak commands to your agents and hear status reports back. Full speech-to-text and text-to-speech built into the dashboard.</div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+    <div class="section-label">HOW IT WORKS</div>
+    <h2 class="section-title">From instruction to execution<br>in seconds</h2>
+    <p class="section-desc">Tell the agent what to do in plain English. It handles the rest.</p>
+
+    <div class="flow-steps">
+        <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content">
+                <div class="flow-title">You give an instruction</div>
+                <div class="flow-desc">Type or speak a command: "Monitor WETH on ethereum" or "leverage trade BTC on BloFin". The agent parses your intent and selects the right chain, tokens, and strategy.</div>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content">
+                <div class="flow-title">Agent observes the market</div>
+                <div class="flow-desc">Every cycle, the agent pulls live data — price, volume, liquidity, buy/sell ratio, momentum — from DexScreener or BloFin and stores it in memory.</div>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-content">
+                <div class="flow-title">Decision engine scores the setup</div>
+                <div class="flow-desc">The analyzer scores the market on multiple factors, combines it with your instruction and past decisions, and produces an action with a confidence level.</div>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content">
+                <div class="flow-title">Safety checks, then execution</div>
+                <div class="flow-desc">Before any trade, the engine validates position size, leverage, gas cost, daily loss limits, and stop-loss placement. If it passes, the trade executes.</div>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div class="flow-content">
+                <div class="flow-title">Agents communicate and learn</div>
+                <div class="flow-desc">The agent broadcasts its signal to other agents via the message bus, stores the decision in memory, and uses past outcomes to improve future decisions.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="code-section" id="start">
+        <div class="code-label">GET STARTED IN 3 COMMANDS</div>
+        <div class="code-block">
+            <span class="cmd">git clone</span> https://github.com/RudeCane/orcl-agent-protocol.git<br>
+            <span class="cmd">cd</span> orcl-agent-protocol && <span class="cmd">pip install</span> -r requirements.txt<br>
+            <span class="cmd">python</span> main.py<br>
+            <br>
+            <span class="comment"># Open dashboard.html in Chrome — you're live.</span>
+        </div>
+    </div>
+</section>
+
+<!-- RISK WARNING -->
+<div class="warning-section">
+    <div class="warning-box">
+        <span class="warning-icon">⚠️</span>
+        <div class="warning-text">
+            <strong>HIGH RISK WARNING:</strong> ORCL is experimental autonomous trading software. Cryptocurrency and leveraged trading involve substantial risk of loss. Leveraged positions amplify both gains and losses — a 10x position loses 100% if the market moves 10% against you. Never trade with funds you cannot afford to lose. The developers accept no liability for financial losses. This is not financial advice. Always start in dry run mode.
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">ORCL</div>
+    <div class="footer-links">
+        <a href="https://github.com/RudeCane/orcl-agent-protocol" target="_blank">GitHub</a>
+        <a href="https://github.com/RudeCane/orcl-agent-protocol#quick-start-5-minutes" target="_blank">Docs</a>
+        <a href="https://github.com/RudeCane/orcl-agent-protocol/issues" target="_blank">Issues</a>
+    </div>
+    <div class="footer-copy">MIT License — Use it, modify it, build on it.</div>
+</footer>
+
+<!-- Smooth reveal on scroll -->
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card, .flow-step, .chain-pill').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'all 0.6s ease';
+        observer.observe(el);
+    });
+
+    // Stagger feature cards
+    document.querySelectorAll('.feature-card').forEach((el, i) => {
+        el.style.transitionDelay = `${i * 0.08}s`;
+    });
+
+    document.querySelectorAll('.flow-step').forEach((el, i) => {
+        el.style.transitionDelay = `${i * 0.1}s`;
+    });
+
+    document.querySelectorAll('.chain-pill').forEach((el, i) => {
+        el.style.transitionDelay = `${i * 0.1}s`;
+    });
+</script>
+
+</body>
+</html>
