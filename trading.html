@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORCL — Trading View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.1/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            --bg-0:#1a1d21; --bg-1:#1f2328; --bg-2:#262a30; --bg-3:#2d3239; --bg-4:#363c44;
+            --border-0:#2e3338; --border-1:#3a4048; --border-2:#4a5260;
+            --text-0:#f2f4f8; --text-1:#c8ced8; --text-2:#929aaa; --text-3:#666e7e;
+            --cyan:#00ccee; --cyan-dim:#00ccee10;
+            --green:#34d399; --green-bg:#34d39920;
+            --red:#f87171; --red-bg:#f8717120;
+            --yellow:#fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'IBM Plex Mono',monospace; background:var(--bg-0); color:var(--text-1); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        .topbar {
+            position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between;
+            padding:0 24px; height:50px; background:rgba(26,29,33,0.9); backdrop-filter:blur(24px); border-bottom:1px solid var(--border-0);
+        }
+        .topbar-left { display:flex; align-items:center; gap:14px; }
+        .logo { font-family:'Outfit',sans-serif; font-weight:800; font-size:15px; letter-spacing:4px; background:linear-gradient(135deg,var(--cyan),#33ddff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .back-link { color:var(--text-3); text-decoration:none; font-size:11px; transition:color 0.2s; }
+        .back-link:hover { color:var(--cyan); }
+
+        .pair-selector {
+            display:flex; align-items:center; gap:8px;
+        }
+        .pair-btn {
+            background:var(--bg-3); border:1px solid var(--border-0); color:var(--text-2);
+            font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 14px; border-radius:5px;
+            cursor:pointer; transition:all 0.15s;
+        }
+        .pair-btn:hover { border-color:var(--border-2); color:var(--text-0); }
+        .pair-btn.active { border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); }
+
+        .tf-selector { display:flex; gap:4px; }
+        .tf-btn {
+            background:var(--bg-3); border:1px solid var(--border-0); color:var(--text-3);
+            font-family:'IBM Plex Mono',monospace; font-size:10px; padding:5px 10px; border-radius:4px;
+            cursor:pointer; transition:all 0.15s;
+        }
+        .tf-btn:hover { color:var(--text-1); }
+        .tf-btn.active { color:var(--cyan); border-color:var(--cyan); }
+
+        .main-grid {
+            display:grid; grid-template-columns:1fr 340px; min-height:calc(100vh - 50px);
+        }
+
+        .chart-col { display:flex; flex-direction:column; border-right:1px solid var(--border-0); }
+
+        /* Price header */
+        .price-bar {
+            padding:16px 24px; border-bottom:1px solid var(--border-0); display:flex; align-items:center; gap:24px;
+        }
+        .price-pair { font-family:'Outfit',sans-serif; font-size:18px; font-weight:700; color:var(--text-0); }
+        .price-val { font-family:'Outfit',sans-serif; font-size:24px; font-weight:700; }
+        .price-up { color:var(--green); }
+        .price-down { color:var(--red); }
+        .price-change { font-size:12px; padding:4px 10px; border-radius:4px; font-weight:600; }
+        .change-up { background:var(--green-bg); color:var(--green); }
+        .change-down { background:var(--red-bg); color:var(--red); }
+        .price-meta { font-size:10px; color:var(--text-3); }
+
+        /* Chart */
+        .chart-container { flex:1; min-height:400px; position:relative; background:var(--bg-1); }
+
+        /* Volume bar below chart */
+        .volume-bar {
+            padding:12px 24px; border-top:1px solid var(--border-0); display:flex; gap:24px;
+            font-size:10px; color:var(--text-3); background:var(--bg-1);
+        }
+        .vol-label { color:var(--text-3); }
+        .vol-val { color:var(--text-1); font-weight:500; }
+
+        /* Right column */
+        .right-col { display:flex; flex-direction:column; background:var(--bg-1); }
+
+        .panel { padding:16px 20px; border-bottom:1px solid var(--border-0); }
+        .panel:last-child { border-bottom:none; flex:1; }
+        .panel-title {
+            font-family:'Outfit',sans-serif; font-size:10px; font-weight:600; text-transform:uppercase;
+            letter-spacing:2px; color:var(--text-3); margin-bottom:12px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .panel-title::before { content:''; width:3px; height:10px; border-radius:2px; background:var(--cyan); }
+
+        /* Order book */
+        .ob-header {
+            display:flex; justify-content:space-between; font-size:9px; color:var(--text-3);
+            text-transform:uppercase; letter-spacing:1px; padding:0 0 8px; border-bottom:1px solid var(--border-0);
+        }
+
+        .ob-row {
+            display:grid; grid-template-columns:1fr 1fr 1fr; font-size:11px; padding:3px 0;
+            position:relative;
+        }
+        .ob-row .ob-bar {
+            position:absolute; top:0; bottom:0; z-index:0; border-radius:2px;
+        }
+        .ob-row span { position:relative; z-index:1; }
+        .ob-bid .ob-bar { right:0; background:var(--green-bg); }
+        .ob-ask .ob-bar { right:0; background:var(--red-bg); }
+        .ob-price-bid { color:var(--green); text-align:center; }
+        .ob-price-ask { color:var(--red); text-align:center; }
+        .ob-size { text-align:right; color:var(--text-2); }
+        .ob-total { text-align:right; color:var(--text-3); font-size:10px; }
+
+        .ob-spread {
+            text-align:center; padding:6px 0; font-size:10px; color:var(--text-3);
+            border-top:1px solid var(--border-0); border-bottom:1px solid var(--border-0);
+            margin:4px 0;
+        }
+
+        /* Depth chart */
+        .depth-chart { width:100%; height:120px; position:relative; }
+        .depth-canvas { width:100%; height:100%; display:block; }
+
+        /* Signals */
+        .signal-item {
+            display:flex; align-items:center; gap:8px; padding:8px 0;
+            border-bottom:1px solid #ffffff04; font-size:11px;
+        }
+        .signal-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+        .signal-dot.bullish { background:var(--green); box-shadow:0 0 4px var(--green); }
+        .signal-dot.bearish { background:var(--red); box-shadow:0 0 4px var(--red); }
+        .signal-dot.neutral { background:var(--yellow); }
+        .signal-text { color:var(--text-2); flex:1; }
+        .signal-val { color:var(--text-0); font-weight:500; }
+
+        .empty { color:var(--text-3); font-size:11px; text-align:center; padding:20px 0; }
+
+        @media (max-width:900px) { .main-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span class="logo">ORCL</span>
+        <a href="dashboard.html" class="back-link">← Dashboard</a>
+    </div>
+    <div class="pair-selector">
+        <button class="pair-btn active" onclick="setPair('BTC-USDT')">BTC</button>
+        <button class="pair-btn" onclick="setPair('ETH-USDT')">ETH</button>
+        <button class="pair-btn" onclick="setPair('SOL-USDT')">SOL</button>
+        <button class="pair-btn" onclick="setPair('BNB-USDT')">BNB</button>
+        <button class="pair-btn" onclick="setPair('XRP-USDT')">XRP</button>
+        <button class="pair-btn" onclick="setPair('DOGE-USDT')">DOGE</button>
+        <span style="color:var(--border-2)">|</span>
+        <select id="exchangeSel" onchange="setExchange(this.value)" style="background:var(--bg-3);border:1px solid var(--border-0);color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 10px;border-radius:4px;cursor:pointer;outline:none">
+            <option value="binance">Binance</option>
+            <option value="binance_us">Binance.US</option>
+            <option value="blofin">BloFin</option>
+        </select><span style="color:var(--border-2)">|</span><span style="font-size:10px;color:var(--text-3)">via Binance WS</span>
+        <span style="color:var(--border-2)">|</span>
+        <div class="tf-selector">
+            <button class="tf-btn" onclick="setTF('1m')">1m</button>
+            <button class="tf-btn active" onclick="setTF('5m')">5m</button>
+            <button class="tf-btn" onclick="setTF('15m')">15m</button>
+            <button class="tf-btn" onclick="setTF('1H')">1H</button>
+            <button class="tf-btn" onclick="setTF('4H')">4H</button>
+            <button class="tf-btn" onclick="setTF('1D')">1D</button>
+        </div>
+    </div>
+</div>
+
+<div class="main-grid">
+    <!-- LEFT: Chart -->
+    <div class="chart-col">
+        <div class="price-bar">
+            <span class="price-pair" id="pricePair">BTC-USDT</span><span id="exchangeLabel" style="font-size:10px;color:var(--text-3);margin-left:8px;padding:3px 8px;background:var(--bg-3);border-radius:4px">Binance</span>
+            <span class="price-val price-up" id="priceVal">—</span>
+            <span class="price-change change-up" id="priceChange">—</span>
+            <div>
+                <div class="price-meta">24h High: <span id="priceHigh">—</span></div>
+                <div class="price-meta">24h Low: <span id="priceLow">—</span></div>
+            </div>
+        </div>
+        <div class="chart-container" id="chartContainer"></div>
+        <div class="volume-bar">
+            <div><span class="vol-label">24h Volume: </span><span class="vol-val" id="vol24h">—</span></div>
+            <div><span class="vol-label">Spread: </span><span class="vol-val" id="spreadVal">—</span></div>
+            <div><span class="vol-label">Imbalance: </span><span class="vol-val" id="imbalanceVal">—</span></div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Order Book + Signals -->
+    <div class="right-col">
+        <div class="panel">
+            <div class="panel-title">Order Book</div>
+            <div class="ob-header">
+                <span>Total</span><span>Price</span><span style="text-align:right">Size</span>
+            </div>
+            <div id="obAsks"></div>
+            <div class="ob-spread" id="obSpread">Spread: —</div>
+            <div id="obBids"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Depth Chart</div>
+            <div class="depth-chart">
+                <canvas class="depth-canvas" id="depthCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Order Book Signals</div>
+            <div id="signalsList"><div class="empty">Loading signals...</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let currentPair = 'BTC-USDT';
+let currentTF = '5m';
+let chart = null;
+let candleSeries = null;
+let volumeSeries = null;
+
+// ── INIT CHART ──
+function initChart() {
+    const container = document.getElementById('chartContainer');
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+        layout: {
+            background: { color: '#1f2328' },
+            textColor: '#929aaa',
+            fontFamily: 'IBM Plex Mono',
+            fontSize: 11,
+        },
+        grid: {
+            vertLines: { color: '#2e333822' },
+            horzLines: { color: '#2e333822' },
+        },
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+            vertLine: { color: '#00ccee40', width: 1, style: 2 },
+            horzLine: { color: '#00ccee40', width: 1, style: 2 },
+        },
+        rightPriceScale: {
+            borderColor: '#2e3338',
+            scaleMargins: { top: 0.1, bottom: 0.2 },
+        },
+        timeScale: {
+            borderColor: '#2e3338',
+            timeVisible: true,
+            secondsVisible: false,
+        },
+    });
+
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#34d399',
+        downColor: '#f87171',
+        borderUpColor: '#34d399',
+        borderDownColor: '#f87171',
+        wickUpColor: '#34d39988',
+        wickDownColor: '#f8717188',
+    });
+
+    volumeSeries = chart.addHistogramSeries({
+        color: '#00ccee20',
+        priceFormat: { type: 'volume' },
+        priceScaleId: '',
+        scaleMargins: { top: 0.85, bottom: 0 },
+    });
+
+    window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+    });
+}
+
+// ── FETCH CANDLES ──
+async function loadCandles() {
+    try {
+        const resp = await fetch(`${API}/candles/${currentPair}?bar=${currentTF}&limit=200`);
+        const data = await resp.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+            candleSeries.setData(data.map(c => ({
+                time: c.time,
+                open: c.open,
+                high: c.high,
+                low: c.low,
+                close: c.close,
+            })));
+
+            volumeSeries.setData(data.map(c => ({
+                time: c.time,
+                value: c.volume,
+                color: c.close >= c.open ? '#34d39930' : '#f8717130',
+            })));
+
+            const last = data[data.length - 1];
+            const first = data[0];
+            updatePriceBar(last, first, data);
+        }
+    } catch (e) {
+        console.error('Candle fetch error:', e);
+    }
+}
+
+function updatePriceBar(last, first, data) {
+    const price = last.close;
+    const change = ((price - first.open) / first.open * 100);
+    const isUp = change >= 0;
+
+    document.getElementById('pricePair').textContent = currentPair;
+    document.getElementById('priceVal').textContent = `$${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('priceVal').className = `price-val ${isUp ? 'price-up' : 'price-down'}`;
+    document.getElementById('priceChange').textContent = `${isUp ? '+' : ''}${change.toFixed(2)}%`;
+    document.getElementById('priceChange').className = `price-change ${isUp ? 'change-up' : 'change-down'}`;
+
+    const highs = data.map(c => c.high);
+    const lows = data.map(c => c.low);
+    document.getElementById('priceHigh').textContent = `$${Math.max(...highs).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+    document.getElementById('priceLow').textContent = `$${Math.min(...lows).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+}
+
+// ── ORDER BOOK ──
+async function loadOrderBook() {
+    try {
+        const resp = await fetch(`${API}/orderbook/blofin/${currentPair}`);
+        const data = await resp.json();
+
+        if (data.error) return;
+
+        renderOrderBook(data);
+        renderDepthChart(data);
+        renderSignals(data);
+
+        document.getElementById('spreadVal').textContent = `${data.spread_pct?.toFixed(4) || '—'}%`;
+        document.getElementById('imbalanceVal').textContent = data.imbalance?.toFixed(4) || '—';
+        document.getElementById('vol24h').textContent = `$${(data.bid_depth_usd + data.ask_depth_usd).toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+    } catch (e) {
+        // Try chart data endpoint
+        try {
+            const resp = await fetch(`${API}/orderbook/blofin/${currentPair}/chart`);
+            const data = await resp.json();
+            if (data.bids && data.asks) renderOrderBookFromChart(data);
+        } catch (e2) { console.error('OB error:', e2); }
+    }
+}
+
+function renderOrderBook(data) {
+    const asks = (data.walls?.asks || []).length > 0 ? data : null;
+
+    // We need raw bid/ask data — fetch chart endpoint
+    fetch(`${API}/orderbook/blofin/${currentPair}/chart`)
+        .then(r => r.json())
+        .then(chart => {
+            if (chart.bids && chart.asks) renderOrderBookFromChart(chart);
+        })
+        .catch(() => {});
+
+    document.getElementById('obSpread').textContent = `Spread: $${data.spread?.toFixed(2) || '—'} (${data.spread_pct?.toFixed(4) || '—'}%)`;
+}
+
+function renderOrderBookFromChart(data) {
+    const bids = data.bids.slice(0, 12);
+    const asks = data.asks.slice(0, 12).reverse();
+
+    const maxBidSize = Math.max(...bids.map(b => b[1]));
+    const maxAskSize = Math.max(...asks.map(a => a[1]));
+
+    let bidTotal = 0;
+    let askTotal = 0;
+
+    // Asks (top, reversed so highest price first)
+    document.getElementById('obAsks').innerHTML = asks.map(a => {
+        askTotal += a[0] * a[1];
+        const pct = (a[1] / maxAskSize) * 100;
+        return `<div class="ob-row ob-ask">
+            <div class="ob-bar" style="width:${pct}%"></div>
+            <span class="ob-total">${(a[0] * a[1]).toFixed(0)}</span>
+            <span class="ob-price-ask">${a[0].toFixed(2)}</span>
+            <span class="ob-size">${a[1].toFixed(4)}</span>
+        </div>`;
+    }).join('');
+
+    // Bids (bottom)
+    document.getElementById('obBids').innerHTML = bids.map(b => {
+        bidTotal += b[0] * b[1];
+        const pct = (b[1] / maxBidSize) * 100;
+        return `<div class="ob-row ob-bid">
+            <div class="ob-bar" style="width:${pct}%"></div>
+            <span class="ob-total">${(b[0] * b[1]).toFixed(0)}</span>
+            <span class="ob-price-bid">${b[0].toFixed(2)}</span>
+            <span class="ob-size">${b[1].toFixed(4)}</span>
+        </div>`;
+    }).join('');
+}
+
+// ── DEPTH CHART ──
+function renderDepthChart(data) {
+    const canvas = document.getElementById('depthCanvas');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    // Get chart data
+    fetch(`${API}/orderbook/blofin/${currentPair}/chart`)
+        .then(r => r.json())
+        .then(chart => {
+            if (!chart.bids || !chart.asks) return;
+
+            const bids = chart.bids.slice(0, 20);
+            const asks = chart.asks.slice(0, 20);
+            const mid = chart.mid_price || 0;
+
+            // Cumulative depth
+            let bidCum = [];
+            let askCum = [];
+            let cumBid = 0, cumAsk = 0;
+
+            bids.forEach(b => { cumBid += b[0] * b[1]; bidCum.push({ price: b[0], cum: cumBid }); });
+            asks.forEach(a => { cumAsk += a[0] * a[1]; askCum.push({ price: a[0], cum: cumAsk }); });
+
+            const maxCum = Math.max(cumBid, cumAsk);
+            const allPrices = [...bids.map(b => b[0]), ...asks.map(a => a[0])];
+            const minPrice = Math.min(...allPrices);
+            const maxPrice = Math.max(...allPrices);
+            const priceRange = maxPrice - minPrice;
+
+            const px = (price) => ((price - minPrice) / priceRange) * w;
+            const py = (cum) => h - (cum / maxCum) * (h - 10);
+
+            // Bid fill
+            ctx.beginPath();
+            ctx.moveTo(px(bids[0][0]), h);
+            bidCum.forEach(b => ctx.lineTo(px(b.price), py(b.cum)));
+            ctx.lineTo(px(bidCum[bidCum.length - 1].price), h);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(52, 211, 153, 0.12)';
+            ctx.fill();
+
+            // Bid line
+            ctx.beginPath();
+            bidCum.forEach((b, i) => i === 0 ? ctx.moveTo(px(b.price), py(b.cum)) : ctx.lineTo(px(b.price), py(b.cum)));
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Ask fill
+            ctx.beginPath();
+            ctx.moveTo(px(asks[0][0]), h);
+            askCum.forEach(a => ctx.lineTo(px(a.price), py(a.cum)));
+            ctx.lineTo(px(askCum[askCum.length - 1].price), h);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(248, 113, 113, 0.12)';
+            ctx.fill();
+
+            // Ask line
+            ctx.beginPath();
+            askCum.forEach((a, i) => i === 0 ? ctx.moveTo(px(a.price), py(a.cum)) : ctx.lineTo(px(a.price), py(a.cum)));
+            ctx.strokeStyle = '#f87171';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Mid line
+            if (mid) {
+                ctx.beginPath();
+                ctx.moveTo(px(mid), 0);
+                ctx.lineTo(px(mid), h);
+                ctx.strokeStyle = '#00ccee30';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        })
+        .catch(() => {});
+}
+
+// ── SIGNALS ──
+function renderSignals(data) {
+    const el = document.getElementById('signalsList');
+    const signals = data.signals || [];
+    const sr = data.support_resistance || {};
+
+    let items = [];
+
+    // Imbalance
+    const imb = data.imbalance || 0;
+    if (Math.abs(imb) > 0.1) {
+        const bull = imb > 0;
+        items.push(`<div class="signal-item">
+            <div class="signal-dot ${bull ? 'bullish' : 'bearish'}"></div>
+            <span class="signal-text">Book ${bull ? 'bid' : 'ask'} heavy</span>
+            <span class="signal-val">${(imb * 100).toFixed(1)}%</span>
+        </div>`);
+    }
+
+    // Spread
+    if (data.spread_pct > 0.1) {
+        items.push(`<div class="signal-item">
+            <div class="signal-dot neutral"></div>
+            <span class="signal-text">Wide spread</span>
+            <span class="signal-val">${data.spread_pct.toFixed(3)}%</span>
+        </div>`);
+    }
+
+    // Walls
+    signals.forEach(s => {
+        if (s.type === 'buy_wall') {
+            items.push(`<div class="signal-item"><div class="signal-dot bullish"></div><span class="signal-text">Buy wall detected (${s.count})</span><span class="signal-val">$${s.largest?.toLocaleString(undefined,{maximumFractionDigits:0}) || '—'}</span></div>`);
+        }
+        if (s.type === 'sell_wall') {
+            items.push(`<div class="signal-item"><div class="signal-dot bearish"></div><span class="signal-text">Sell wall detected (${s.count})</span><span class="signal-val">$${s.largest?.toLocaleString(undefined,{maximumFractionDigits:0}) || '—'}</span></div>`);
+        }
+    });
+
+    // Support/Resistance
+    if (sr.support?.length) {
+        items.push(`<div class="signal-item"><div class="signal-dot bullish"></div><span class="signal-text">Support</span><span class="signal-val">$${sr.support[0].price.toFixed(2)}</span></div>`);
+    }
+    if (sr.resistance?.length) {
+        items.push(`<div class="signal-item"><div class="signal-dot bearish"></div><span class="signal-text">Resistance</span><span class="signal-val">$${sr.resistance[0].price.toFixed(2)}</span></div>`);
+    }
+
+    // Depth
+    items.push(`<div class="signal-item"><div class="signal-dot bullish"></div><span class="signal-text">Bid depth</span><span class="signal-val">$${data.bid_depth_usd?.toLocaleString(undefined,{maximumFractionDigits:0}) || '—'}</span></div>`);
+    items.push(`<div class="signal-item"><div class="signal-dot bearish"></div><span class="signal-text">Ask depth</span><span class="signal-val">$${data.ask_depth_usd?.toLocaleString(undefined,{maximumFractionDigits:0}) || '—'}</span></div>`);
+
+    el.innerHTML = items.length ? items.join('') : '<div class="empty">No signals</div>';
+}
+
+// ── CONTROLS ──
+function setPair(pair) {
+    currentPair = pair;
+    document.querySelectorAll('.pair-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    loadCandles();
+    loadOrderBook();
+}
+
+function setTF(tf) {
+    currentTF = tf;
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    loadCandles();
+}
+
+// ── INIT ──
+
+// -- EXCHANGE SUPPORT --
+let currentExchange = 'binance';
+
+function setExchange(ex) {
+    currentExchange = ex;
+    if(document.getElementById('exchangeLabel')){
+        const names={binance:'Binance',binance_us:'Binance.US',blofin:'BloFin'};
+        document.getElementById('exchangeLabel').textContent=names[currentExchange]||currentExchange;
+    }
+
+    loadCandles();
+    // Reconnect orderbook WS if binance
+    if (typeof connectOrderBookWS === 'function') {
+        if (ex === 'binance' || ex === 'binance_us') {
+            connectOrderBookWS();
+        }
+    }
+}
+
+// Override loadCandles to use selected exchange
+const _origLoadCandles = loadCandles;
+loadCandles = async function() {
+    try {
+        let url;
+        const pair = currentPair;
+        if (currentExchange === 'binance' || currentExchange === 'binance_us') {
+            const symbol = pair.replace('-', '');
+            const us = currentExchange === 'binance_us' ? '&us=true' : '';
+            url = `${API}/binance/candles/${symbol}?interval=${currentTF}&limit=200${us}`;
+        } else {
+            url = `${API}/candles/${pair}?bar=${currentTF}&limit=200`;
+        }
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+            candleSeries.setData(data.map(c => ({
+                time: c.time, open: c.open, high: c.high, low: c.low, close: c.close,
+            })));
+            volumeSeries.setData(data.map(c => ({
+                time: c.time, value: c.volume,
+                color: c.close >= c.open ? '#34d39930' : '#f8717130',
+            })));
+            const last = data[data.length - 1];
+            const first = data[0];
+            updatePriceBar(last, first, data);
+        }
+    } catch (e) {
+        console.error('Candle fetch error:', e);
+    }
+};
+
+initChart();
+loadCandles();
+loadOrderBook();
+
+
+// -- BINANCE WEBSOCKET ORDER BOOK (instant, free, no API key) --
+let obSocket = null;
+
+function connectOrderBookWS() {
+    const pair = currentPair.replace('-', '').toLowerCase();
+    const wsBase = currentExchange === 'binance_us' ? 'wss://stream.binance.us:9443/ws' : 'wss://stream.binance.com:9443/ws';
+    if (obSocket) obSocket.close();
+
+    obSocket = new WebSocket(`${wsBase}/${pair}@depth20@100ms`);
+
+    obSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.bids && data.asks) {
+            renderOrderBookFromChart({
+                bids: data.bids.map(b => [parseFloat(b[0]), parseFloat(b[1])]),
+                asks: data.asks.map(a => [parseFloat(a[0]), parseFloat(a[1])]),
+                mid_price: (parseFloat(data.bids[0][0]) + parseFloat(data.asks[0][0])) / 2
+            });
+
+            const bestBid = parseFloat(data.bids[0][0]);
+            const bestAsk = parseFloat(data.asks[0][0]);
+            const spread = bestAsk - bestBid;
+            const spreadPct = (spread / bestAsk) * 100;
+            document.getElementById('spreadVal').textContent = spreadPct.toFixed(4) + '%';
+
+            const bidVol = data.bids.reduce((s, b) => s + parseFloat(b[0]) * parseFloat(b[1]), 0);
+            const askVol = data.asks.reduce((s, a) => s + parseFloat(a[0]) * parseFloat(a[1]), 0);
+            const imb = (bidVol - askVol) / (bidVol + askVol);
+            document.getElementById('imbalanceVal').textContent = imb.toFixed(4);
+
+            // Quick signals
+            const el = document.getElementById('signalsList');
+            let items = [];
+            if (Math.abs(imb) > 0.1) {
+                const bull = imb > 0;
+                items.push('<div class="signal-item"><div class="signal-dot ' + (bull?'bullish':'bearish') + '"></div><span class="signal-text">Book ' + (bull?'bid':'ask') + ' heavy</span><span class="signal-val">' + (imb*100).toFixed(1) + '%</span></div>');
+            }
+            if (spreadPct > 0.05) {
+                items.push('<div class="signal-item"><div class="signal-dot neutral"></div><span class="signal-text">Spread</span><span class="signal-val">' + spreadPct.toFixed(4) + '%</span></div>');
+            }
+            items.push('<div class="signal-item"><div class="signal-dot bullish"></div><span class="signal-text">Bid depth</span><span class="signal-val">$' + bidVol.toLocaleString(undefined,{maximumFractionDigits:0}) + '</span></div>');
+            items.push('<div class="signal-item"><div class="signal-dot bearish"></div><span class="signal-text">Ask depth</span><span class="signal-val">$' + askVol.toLocaleString(undefined,{maximumFractionDigits:0}) + '</span></div>');
+            el.innerHTML = items.join('');
+        }
+    };
+
+    obSocket.onclose = () => { setTimeout(connectOrderBookWS, 2000); };
+    obSocket.onerror = () => { obSocket.close(); };
+}
+
+// Override setPair to reconnect WS
+const _origSetPair = setPair;
+setPair = function(pair) {
+    _origSetPair(pair);
+    connectOrderBookWS();
+};
+
+connectOrderBookWS();
+
+// Auto refresh
+setInterval(() => { loadCandles(); loadOrderBook(); }, 30000);
+</script>
+</body>
+</html>

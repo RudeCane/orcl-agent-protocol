@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORCL — AI Agent Protocol</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #1a1d21;
+            --bg-1: #1f2328;
+            --bg-2: #262a30;
+            --bg-3: #2d3239;
+            --bg-4: #363c44;
+            --border-0: #2e3338;
+            --border-1: #3a4048;
+            --border-2: #4a5260;
+            --text-0: #f2f4f8;
+            --text-1: #c8ced8;
+            --text-2: #929aaa;
+            --text-3: #666e7e;
+            --accent: #00ccee;
+            --accent-light: #33ddff;
+            --accent-dim: #00ccee10;
+            --accent-mid: #00ccee25;
+            --accent-glow: #00ccee40;
+            --green: #34d399;
+            --green-dim: #34d39912;
+            --green-bg: #34d39920;
+            --red: #f87171;
+            --red-dim: #f8717112;
+            --red-bg: #f8717120;
+            --yellow: #fbbf24;
+            --yellow-dim: #fbbf2412;
+            --purple: #a78bfa;
+            --purple-dim: #a78bfa12;
+        }
+
+        html.light {
+            --bg-0: #f4f5f7;
+            --bg-1: #ffffff;
+            --bg-2: #f0f1f4;
+            --bg-3: #e8eaef;
+            --bg-4: #dde0e6;
+            --border-0: #e0e3e8;
+            --border-1: #cdd1d9;
+            --border-2: #b8bec9;
+            --text-0: #111318;
+            --text-1: #2d3140;
+            --text-2: #5a6175;
+            --text-3: #8890a2;
+            --accent: #0099bb;
+            --accent-light: #00aacc;
+            --accent-dim: #0099bb0c;
+            --accent-mid: #0099bb18;
+            --accent-glow: #0099bb30;
+            --green: #059669;
+            --green-dim: #05966908;
+            --green-bg: #05966912;
+            --red: #dc2626;
+            --red-dim: #dc262608;
+            --red-bg: #dc262612;
+            --yellow: #d97706;
+            --yellow-dim: #d9770608;
+            --purple: #7c3aed;
+            --purple-dim: #7c3aed08;
+        }
+
+        html.light body::before {
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 0%, #0099bb06 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 100%, #05966904 0%, transparent 60%);
+        }
+
+        html.light .topbar {
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom-color: var(--border-0);
+        }
+
+        html.light .logo {
+            background: linear-gradient(135deg, #0088aa, #00aacc);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        html.light .cmd-btn-primary {
+            background: linear-gradient(135deg, #0099bb, #00bbdd);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(0, 153, 187, 0.2);
+        }
+
+        html.light .conn-pill { background: var(--bg-2); }
+
+        html.light .metric { border-color: var(--border-0); }
+
+        html.light .chain-card { border-color: var(--border-0); }
+
+        html.light .log-area { background: var(--bg-2); border-color: var(--border-0); }
+
+        html.light .pos-table tr:hover td { background: var(--bg-2); }
+
+        .theme-toggle {
+            background: var(--bg-3);
+            border: 1px solid var(--border-1);
+            color: var(--text-2);
+            font-size: 15px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .theme-toggle:hover { background: var(--bg-4); border-color: var(--border-2); color: var(--text-0); }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg-0);
+            color: var(--text-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Warm ambient glow */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 0%, #00ccee06 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 100%, #34d39904 0%, transparent 60%),
+                radial-gradient(ellipse 80% 80% at 50% 50%, #ffffff02 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── TOP BAR ── */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 54px;
+            background: rgba(26, 29, 33, 0.88);
+            backdrop-filter: blur(24px) saturate(1.3);
+            border-bottom: 1px solid var(--border-0);
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: 5px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .divider-v { width: 1px; height: 22px; background: var(--border-1); }
+
+        .env-tag {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+
+        .env-live { background: var(--green-bg); color: var(--green); border: 1px solid #34d39930; }
+        .env-dry { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-mid); }
+
+        .subtitle { font-size: 10px; color: var(--text-3); letter-spacing: 1px; }
+
+        .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+        .conn-pill {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--bg-3);
+            border: 1px solid var(--border-0);
+        }
+
+        .conn-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-3);
+            transition: all 0.3s;
+        }
+
+        .conn-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+        .conn-label { font-size: 10px; color: var(--text-2); letter-spacing: 0.5px; }
+
+        .topbar-btn {
+            background: var(--bg-3);
+            border: 1px solid var(--border-1);
+            color: var(--text-2);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            padding: 6px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .topbar-btn:hover { background: var(--bg-4); color: var(--text-0); border-color: var(--border-2); }
+
+        /* ── MAIN LAYOUT ── */
+        .main {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            min-height: calc(100vh - 54px);
+        }
+
+        /* ── COMMAND BAR ── */
+        .command-area {
+            grid-column: 1 / -1;
+            background: var(--bg-1);
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--border-0);
+        }
+
+        .command-row { display: flex; gap: 8px; align-items: stretch; }
+
+        .cmd-input {
+            flex: 1;
+            background: var(--bg-0);
+            border: 1.5px solid var(--border-1);
+            color: var(--text-0);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            padding: 13px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .cmd-input::placeholder { color: var(--text-3); }
+        .cmd-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim), 0 2px 12px rgba(0, 204, 238, 0.08);
+        }
+
+        .cmd-select {
+            background: var(--bg-0);
+            border: 1.5px solid var(--border-1);
+            color: var(--text-1);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            padding: 0 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            outline: none;
+            min-width: 130px;
+            transition: border-color 0.2s;
+        }
+
+        .cmd-select:focus { border-color: var(--accent); }
+
+        .cmd-btn {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 2px;
+            padding: 0 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .cmd-btn-primary {
+            background: linear-gradient(135deg, #00bbdd, #00ddff);
+            color: #0a0f14;
+            box-shadow: 0 2px 12px rgba(0, 204, 238, 0.2);
+        }
+
+        .cmd-btn-primary:hover {
+            filter: brightness(1.12);
+            box-shadow: 0 4px 20px rgba(0, 204, 238, 0.3);
+        }
+
+        .cmd-btn-mic {
+            background: var(--bg-0);
+            border: 1.5px solid var(--border-1);
+            color: var(--text-2);
+            font-size: 17px;
+            padding: 0 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cmd-btn-mic:hover { border-color: var(--red); color: var(--red); }
+        .cmd-btn-mic.listening {
+            background: var(--red-bg);
+            border-color: var(--red);
+            animation: mic-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes mic-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.3); }
+            50% { box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); }
+        }
+
+        .cmd-controls { display: flex; gap: 7px; margin-top: 12px; }
+
+        .ctrl-btn {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-1);
+            background: var(--bg-2);
+            color: var(--text-2);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .ctrl-btn:hover { background: var(--bg-4); color: var(--text-0); border-color: var(--border-2); }
+        .ctrl-btn-go { border-color: #34d39930; color: var(--green); }
+        .ctrl-btn-go:hover { background: var(--green-bg); border-color: #34d39950; }
+        .ctrl-btn-stop { border-color: #f8717130; color: var(--red); }
+        .ctrl-btn-stop:hover { background: var(--red-bg); border-color: #f8717150; }
+
+        /* ── METRICS ── */
+        .metrics-row {
+            grid-column: 1 / -1;
+            background: var(--bg-1);
+            padding: 14px 28px 18px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-0);
+        }
+
+        .metric {
+            flex: 1;
+            background: var(--bg-2);
+            border-radius: 10px;
+            padding: 16px 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-0);
+            transition: border-color 0.2s;
+        }
+
+        .metric:hover { border-color: var(--border-1); }
+
+        .metric::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .metric:nth-child(1)::after { background: linear-gradient(90deg, var(--accent), transparent); }
+        .metric:nth-child(2)::after { background: linear-gradient(90deg, var(--purple), transparent); }
+        .metric:nth-child(3)::after { background: linear-gradient(90deg, var(--green), transparent); }
+        .metric:nth-child(4)::after { background: linear-gradient(90deg, #5b8def, transparent); }
+        .metric:nth-child(5)::after { background: linear-gradient(90deg, var(--yellow), transparent); }
+
+        .metric-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-0);
+            line-height: 1;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 8px;
+        }
+
+        /* ── PANELS ── */
+        .col-left {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-0);
+        }
+
+        .col-right {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel {
+            background: var(--bg-1);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-0);
+        }
+
+        .panel:last-child { border-bottom: none; flex: 1; }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            border-radius: 2px;
+            background: var(--accent);
+        }
+
+        .panel-badge {
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* ── CHAINS ── */
+        .chains-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .chain-card {
+            flex: 1;
+            min-width: 170px;
+            background: var(--bg-2);
+            border: 1px solid var(--border-0);
+            border-radius: 10px;
+            padding: 14px 18px;
+            transition: all 0.2s;
+        }
+
+        .chain-card:hover { border-color: var(--border-2); transform: translateY(-1px); }
+
+        .chain-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+        .chain-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-0);
+        }
+
+        .chain-dot { width: 7px; height: 7px; border-radius: 50%; }
+        .chain-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .chain-dot.off { background: var(--red); box-shadow: 0 0 4px var(--red); }
+
+        .chain-detail { font-size: 10px; color: var(--text-3); line-height: 1.8; }
+
+        /* ── AGENTS ── */
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 10px;
+            margin: 0 -10px;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+
+        .agent-item:hover { background: var(--bg-2); }
+
+        .agent-bar { width: 3px; height: 32px; border-radius: 3px; flex-shrink: 0; }
+        .agent-bar.running { background: var(--green); box-shadow: 0 0 4px var(--green); }
+        .agent-bar.stopped { background: var(--red); }
+        .agent-bar.idle { background: var(--text-3); }
+
+        .agent-info { flex: 1; min-width: 0; }
+
+        .agent-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-0);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .agent-meta { font-size: 10px; color: var(--text-3); margin-top: 3px; }
+
+        .agent-tag {
+            font-size: 9px;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            flex-shrink: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .tag-market { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-mid); }
+        .tag-liquidity { background: var(--green-dim); color: var(--green); border: 1px solid #34d39925; }
+        .tag-treasury { background: var(--yellow-dim); color: var(--yellow); border: 1px solid #fbbf2425; }
+        .tag-leverage { background: var(--red-dim); color: var(--red); border: 1px solid #f8717125; }
+        .tag-blofin { background: var(--purple-dim); color: var(--purple); border: 1px solid #a78bfa25; }
+        .tag-binance { background: #f0b90b10; color: #f0b90b; border: 1px solid #f0b90b25; }
+        .tag-binance_us { background: #f0b90b10; color: #f0b90b; border: 1px solid #f0b90b25; }
+
+        /* ── FEED ── */
+        .feed { max-height: 380px; overflow-y: auto; }
+        .feed::-webkit-scrollbar { width: 3px; }
+        .feed::-webkit-scrollbar-thumb { background: var(--border-1); border-radius: 3px; }
+
+        .feed-item {
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border-0);
+            font-size: 11px;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .feed-item:last-child { border-bottom: none; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .feed-row { display: flex; justify-content: space-between; align-items: center; }
+
+        .feed-act {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .feed-buy { background: var(--green-bg); color: var(--green); }
+        .feed-sell { background: var(--red-bg); color: var(--red); }
+        .feed-hold { background: var(--bg-3); color: var(--text-3); }
+        .feed-alert { background: #fbbf2418; color: var(--yellow); }
+
+        .feed-sym { font-weight: 500; color: var(--text-0); margin-left: 10px; }
+        .feed-price { color: var(--text-2); margin-left: 6px; }
+        .feed-time { color: var(--text-3); font-size: 10px; }
+        .feed-reason { color: var(--text-3); font-size: 10px; margin-top: 4px; }
+
+        /* ── POSITIONS ── */
+        .pos-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+        .pos-table th { font-size: 9px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border-1); }
+        .pos-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-0); color: var(--text-1); }
+        .pos-table tr:hover td { background: var(--bg-2); }
+        .pnl-pos { color: var(--green); font-weight: 600; }
+        .pnl-neg { color: var(--red); font-weight: 600; }
+        .side-long { color: var(--green); font-weight: 700; font-size: 10px; letter-spacing: 0.5px; }
+        .side-short { color: var(--red); font-weight: 700; font-size: 10px; letter-spacing: 0.5px; }
+
+        /* ── LOG ── */
+        .log-area {
+            background: var(--bg-0);
+            border: 1px solid var(--border-0);
+            border-radius: 8px;
+            padding: 14px 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 10px;
+            line-height: 1.9;
+        }
+
+        .log-area::-webkit-scrollbar { width: 3px; }
+        .log-area::-webkit-scrollbar-thumb { background: var(--border-0); border-radius: 3px; }
+
+        .log-s { color: var(--green); }
+        .log-e { color: var(--red); }
+        .log-i { color: var(--accent); }
+        .log-w { color: var(--yellow); }
+
+        /* ── WALLET ── */
+        .wallet-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 11px; border-bottom: 1px solid var(--border-0); }
+        .wallet-row:last-child { border-bottom: none; }
+        .wallet-k { color: var(--text-3); }
+        .wallet-v { color: var(--text-0); font-weight: 500; }
+
+        .wallet-connect-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wallet-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-2);
+            border: 1px solid var(--border-0);
+            border-radius: 8px;
+            color: var(--text-1);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+        }
+
+        .wallet-btn:hover {
+            background: var(--bg-3);
+            border-color: var(--border-2);
+            color: var(--text-0);
+            transform: translateX(2px);
+        }
+
+        .wallet-btn .wallet-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .wallet-btn .wallet-icon.metamask { background: #f6851b18; }
+        .wallet-btn .wallet-icon.trust { background: #0500ff12; }
+        .wallet-btn .wallet-icon.safepal { background: #4a21ef12; }
+
+        .wallet-btn .wallet-label { flex: 1; }
+        .wallet-btn .wallet-detect {
+            font-size: 9px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .wallet-detect.detected { background: var(--green-bg); color: var(--green); }
+        .wallet-detect.not-detected { background: var(--bg-3); color: var(--text-3); }
+
+        .wallet-connected {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .wallet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .wallet-provider-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--green);
+            font-weight: 500;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .wallet-provider-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .wallet-disconnect {
+            background: none;
+            border: 1px solid var(--border-1);
+            color: var(--text-3);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .wallet-disconnect:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+        .empty { color: var(--text-3); font-size: 11px; text-align: center; padding: 28px 0; }
+
+        /* ── RISK WARNING ── */
+        .risk-banner {
+            grid-column: 1 / -1;
+            background: #f8717108;
+            border-bottom: 1px solid #f8717120;
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--red);
+            line-height: 1.5;
+        }
+
+        .risk-banner .risk-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .risk-banner .risk-text {
+            flex: 1;
+        }
+
+        .risk-banner .risk-text strong {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .risk-banner .risk-dismiss {
+            background: none;
+            border: 1px solid #f8717130;
+            color: var(--red);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .risk-banner .risk-dismiss:hover { background: var(--red-bg); }
+
+        .risk-footer {
+            grid-column: 1 / -1;
+            background: var(--bg-1);
+            border-top: 1px solid var(--border-0);
+            padding: 16px 28px;
+            font-size: 10px;
+            color: var(--text-3);
+            line-height: 1.7;
+            text-align: center;
+        }
+
+        .risk-footer strong { color: var(--text-2); }
+
+        html.light .risk-banner { background: #dc262608; border-bottom-color: #dc262615; }
+
+        @media (max-width: 900px) {
+            .main { grid-template-columns: 1fr; }
+            .col-left { border-right: none; }
+            .metrics-row { flex-wrap: wrap; }
+            .metric { min-width: 120px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span class="logo">ORCL</span>
+        <div class="divider-v"></div>
+        <span class="env-tag env-dry" id="envTag">DRY RUN</span>
+        <span class="subtitle">AI Agent Protocol</span>
+    </div>
+    <div class="topbar-right">
+        <div class="conn-pill">
+            <div class="conn-dot" id="connDot"></div>
+            <span class="conn-label" id="connLabel">Connecting</span>
+        </div>
+        <a href="trading.html" class="topbar-btn" style="text-decoration:none">📊 Trading</a>
+        <button class="topbar-btn" onclick="refresh()">↻ Refresh</button>
+        <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+    </div>
+</div>
+
+<div class="main">
+    <!-- COMMAND -->
+    <div class="command-area">
+        <div class="command-row">
+            <input class="cmd-input" id="cmdInput" placeholder="Instruct your agent — 'monitor WETH on ethereum' or 'blofin trade BTC SOL'">
+            <button class="cmd-btn-mic" id="micBtn" onclick="toggleVoice()">🎙</button>
+            <select class="cmd-select" id="chainSel">
+                <option value="base">Base</option>
+                <option value="ethereum">Ethereum</option>
+                <option value="bnb">BNB Chain</option>
+                <option value="blofin">BloFin CEX</option><option value="binance">Binance</option><option value="binance_us">Binance.US</option>
+            </select>
+            <button class="cmd-btn cmd-btn-primary" onclick="send()">EXECUTE</button>
+        </div>
+        <div class="cmd-controls">
+            <button class="ctrl-btn ctrl-btn-go" onclick="startAll()">▶ Start All</button>
+            <button class="ctrl-btn ctrl-btn-stop" onclick="stopAll()">■ Stop All</button>
+            <button class="ctrl-btn" onclick="submitTask()">⚡ Quick Task</button>
+            <button class="ctrl-btn" id="voiceToggle" onclick="toggleTTS()" style="margin-left:auto">🔊 Voice On</button>
+        </div>
+    </div>
+
+    <!-- RISK WARNING -->
+    <div class="risk-banner" id="riskBanner">
+        <span class="risk-icon">⚠️</span>
+        <span class="risk-text">
+            <strong>HIGH RISK WARNING:</strong> Autonomous leverage trading can result in rapid and total loss of funds. Leveraged positions amplify both gains and losses — a 10x position loses 100% if the market moves 10% against you. Never trade with money you cannot afford to lose. This software is experimental and provided as-is with no guarantees. You are solely responsible for any trades executed.
+        </span>
+        <button class="risk-dismiss" onclick="dismissRisk()">Understood</button>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics-row">
+        <div class="metric"><div class="metric-val" id="mAgents">0</div><div class="metric-label">Agents</div></div>
+        <div class="metric"><div class="metric-val" id="mChains">0</div><div class="metric-label">Chains</div></div>
+        <div class="metric"><div class="metric-val" id="mPositions">0</div><div class="metric-label">Positions</div></div>
+        <div class="metric"><div class="metric-val" id="mTrades">0</div><div class="metric-label">Trades</div></div>
+        <div class="metric"><div class="metric-val" id="mMemory">0</div><div class="metric-label">Memories</div></div>
+    </div>
+
+    <!-- LEFT -->
+    <div class="col-left">
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">Chain Connections</span></div>
+            <div class="chains-row" id="chainsRow"><div class="empty">Loading chains...</div></div>
+            <div style="margin-top:16px">
+                <div class="panel-title" style="margin-bottom:12px">Exchanges</div>
+                <div class="chains-row" id="exchangeRow"><div class="empty">Loading exchanges...</div></div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Open Positions</span>
+                <span class="panel-badge" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-mid)" id="posCount">0</span>
+            </div>
+            <div id="posArea"><div class="empty">No open positions</div></div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">Activity Feed</span></div>
+            <div class="feed" id="feedArea"><div class="empty">Waiting for activity...</div></div>
+        </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-right">
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">Active Agents</span></div>
+            <div id="agentList"><div class="empty">No agents deployed</div></div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">Wallet</span></div>
+            <div id="walletArea">
+                <div class="wallet-connect-grid" id="walletConnect">
+                    <button class="wallet-btn" onclick="connectWallet('metamask')">
+                        <div class="wallet-icon metamask">🦊</div>
+                        <span class="wallet-label">MetaMask</span>
+                        <span class="wallet-detect not-detected" id="detectMM">—</span>
+                    </button>
+                    <button class="wallet-btn" onclick="connectWallet('trust')">
+                        <div class="wallet-icon trust">🛡️</div>
+                        <span class="wallet-label">Trust Wallet</span>
+                        <span class="wallet-detect not-detected" id="detectTW">—</span>
+                    </button>
+                    <button class="wallet-btn" onclick="connectWallet('safepal')">
+                        <div class="wallet-icon safepal">🔐</div>
+                        <span class="wallet-label">SafePal</span>
+                        <span class="wallet-detect not-detected" id="detectSP">—</span>
+                    </button>
+                </div>
+                <div id="walletConnected" style="display:none">
+                    <div class="wallet-header">
+                        <div class="wallet-provider-tag"><div class="wallet-provider-dot"></div><span id="walletProviderName">Connected</span></div>
+                        <button class="wallet-disconnect" onclick="disconnectWallet()">Disconnect</button>
+                    </div>
+                    <div id="walletDetails"></div>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">System Log</span></div>
+            <div class="log-area" id="logArea"><div class="log-i">Initializing ORCL...</div></div>
+        </div>
+    </div>
+
+    <!-- DISCLAIMER FOOTER -->
+    <div class="risk-footer">
+        <strong>⚠️ DISCLAIMER:</strong> ORCL is experimental autonomous trading software. Cryptocurrency and leveraged trading involve substantial risk of loss.
+        Past performance does not guarantee future results. You may lose some or all of your invested capital.
+        Do not trade with funds you cannot afford to lose. The developers of this software accept no liability for financial losses.
+        Always start in dry run mode, use small position sizes, and monitor the system closely. This is not financial advice.
+    </div>
+</div>
+
+<script>
+const API='http://localhost:8000/api';
+let agentIds=[];
+
+function dismissRisk(){document.getElementById('riskBanner').style.display='none';try{localStorage.setItem('orcl-risk-ack','1')}catch(e){}}
+try{if(localStorage.getItem('orcl-risk-ack')==='1')document.getElementById('riskBanner').style.display='none'}catch(e){}
+
+async function api(p,m='GET',b=null){const o={method:m,headers:{'Content-Type':'application/json'}};if(b)o.body=JSON.stringify(b);try{const r=await fetch(`${API}${p}`,o);if(!r.ok)throw new Error(r.status);return await r.json()}catch{return null}}
+
+async function send(){let inst=document.getElementById('cmdInput').value.trim();const chain=document.getElementById('chainSel').value;if(!inst){log('Enter an instruction','w');return}
+const cns=['base','ethereum','eth','bnb','bsc','binance','blofin'];if(!cns.some(c=>inst.toLowerCase().includes(c)))inst+=` on ${chain}`;
+const dt={base:['0x4200000000000000000000000000000000000006','0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'],ethereum:['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2','0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'],bnb:['0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c','0x55d398326f99059fF775485246999027B3197955'],blofin:['BTC-USDT','ETH-USDT'],binance:['BTCUSDT','ETHUSDT'],binance_us:['BTCUSDT','ETHUSDT']};
+const res=await api('/task','POST',{instruction:inst,tokens:dt[chain]||dt.base});
+if(res&&res.status!=='unknown_task'){log(`Agent deployed: "${inst}"`,'s');speak('Agent deployed');document.getElementById('cmdInput').value='';refresh()}
+else if(res)log(res.message||'Unknown task','w');else log('Server unreachable','e')}
+
+async function startAll(){for(const id of agentIds)await api(`/agents/${id}/start`,'POST');log('All agents started','s');speak('Starting agents');refresh()}
+async function stopAll(){for(const id of agentIds)await api(`/agents/${id}/stop`,'POST');log('All agents stopped','e');speak('Stopping agents');refresh()}
+async function submitTask(){const inst=document.getElementById('cmdInput').value.trim();if(!inst)return;const chain=document.getElementById('chainSel').value;const dt={base:['0x4200000000000000000000000000000000000006'],ethereum:['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'],bnb:['0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'],blofin:['BTC-USDT'],binance:['BTCUSDT'],binance_us:['BTCUSDT']};await api('/task','POST',{instruction:inst,tokens:dt[chain]||[]});document.getElementById('cmdInput').value='';refresh()}
+
+async function refresh(){await Promise.all([rStatus(),rAgents(),rTrades(),rWallet(),rMemory(),rChains(),rPos(),rExchanges()])}
+
+async function rStatus(){const d=await api('/status');const dot=document.getElementById('connDot'),lbl=document.getElementById('connLabel'),env=document.getElementById('envTag');if(d){dot.className='conn-dot on';lbl.textContent='Online';if(d.safety?.dry_run){env.textContent='DRY RUN';env.className='env-tag env-dry'}else{env.textContent='LIVE';env.className='env-tag env-live'}}else{dot.className='conn-dot';lbl.textContent='Offline'}}
+
+async function rAgents(){const d=await api('/agents');const el=document.getElementById('agentList'),mEl=document.getElementById('mAgents');if(!d||typeof d!=='object'){el.innerHTML='<div class="empty">No agents deployed</div>';mEl.textContent='0';agentIds=[];return}
+const agents=Object.entries(d).map(([id,s])=>({id,...s}));agentIds=agents.map(a=>a.id);mEl.textContent=agents.length;
+if(!agents.length){el.innerHTML='<div class="empty">No agents deployed</div>';return}
+el.innerHTML=agents.map(a=>{const st=a.status||'running';const type=(a.agent_type||a.id||'').replace('_agent','').replace('_',' ');const tc=type.includes('market')?'tag-market':type.includes('liquidity')?'tag-liquidity':type.includes('treasury')?'tag-treasury':type.includes('blofin')?'tag-blofin':type.includes('binance')?'tag-binance':type.includes('leverage')?'tag-leverage':'tag-market';const tk=(a.tokens||[]).map(t=>t.length>10?t.slice(0,6)+'…':t).join(', ')||'—';return`<div class="agent-item"><div class="agent-bar ${st}"></div><div class="agent-info"><div class="agent-name">${a.id.slice(0,22)}</div><div class="agent-meta">${tk}</div></div><span class="agent-tag ${tc}">${type}</span></div>`}).join('')}
+
+async function rTrades(){const d=await api('/trades');const el=document.getElementById('feedArea'),mEl=document.getElementById('mTrades');let trades=Array.isArray(d)?d:(d?.trades||[]);mEl.textContent=trades.length;if(!trades.length){el.innerHTML='<div class="empty">Waiting for activity...</div>';return}
+el.innerHTML=trades.slice(0,25).map(t=>{const a=t.action||t.type||'hold';const cls=a.includes('buy')||a==='open'?'feed-buy':a.includes('sell')||a==='close'?'feed-sell':a==='alert'?'feed-alert':'feed-hold';const sym=t.symbol||t.inst_id||t.token?.slice(0,10)||'—';const pr=t.price?`$${Number(t.price).toFixed(2)}`:t.entry_price?`$${Number(t.entry_price).toFixed(2)}`:'';const tm=t.time?new Date(t.time*1000).toLocaleTimeString():'';const rs=t.reason||t.reasoning||'';return`<div class="feed-item"><div class="feed-row"><div><span class="feed-act ${cls}">${a}</span><span class="feed-sym">${sym}</span><span class="feed-price">${pr}</span></div><span class="feed-time">${tm}</span></div>${rs?`<div class="feed-reason">${rs}</div>`:''}</div>`}).join('')}
+
+// ── WALLET CONNECTION ──
+let connectedWallet = null;
+let connectedAddress = null;
+let walletProvider = null;
+
+const CHAIN_IDS = {base:'0x2105',ethereum:'0x1',bnb:'0x38'};
+const CHAIN_NAMES = {'0x2105':'Base','0x1':'Ethereum','0x38':'BNB Chain'};
+
+function detectWallets() {
+    const mm = document.getElementById('detectMM');
+    const tw = document.getElementById('detectTW');
+    const sp = document.getElementById('detectSP');
+
+    if (window.ethereum) {
+        if (window.ethereum.isMetaMask) { mm.textContent = 'Detected'; mm.className = 'wallet-detect detected'; }
+        if (window.ethereum.isTrust || window.trustwallet) { tw.textContent = 'Detected'; tw.className = 'wallet-detect detected'; }
+        if (window.ethereum.isSafePal || window.safepalProvider) { sp.textContent = 'Detected'; sp.className = 'wallet-detect detected'; }
+
+        // Generic injected wallet - mark all as available
+        if (!window.ethereum.isMetaMask && !window.ethereum.isTrust && !window.ethereum.isSafePal) {
+            mm.textContent = 'Available'; mm.className = 'wallet-detect detected';
+        }
+    }
+
+    // Check for multiple providers
+    if (window.ethereum?.providers) {
+        for (const p of window.ethereum.providers) {
+            if (p.isMetaMask) { mm.textContent = 'Detected'; mm.className = 'wallet-detect detected'; }
+            if (p.isTrust) { tw.textContent = 'Detected'; tw.className = 'wallet-detect detected'; }
+            if (p.isSafePal) { sp.textContent = 'Detected'; sp.className = 'wallet-detect detected'; }
+        }
+    }
+
+    // Trust Wallet standalone
+    if (window.trustwallet) { tw.textContent = 'Detected'; tw.className = 'wallet-detect detected'; }
+    // SafePal standalone
+    if (window.safepalProvider) { sp.textContent = 'Detected'; sp.className = 'wallet-detect detected'; }
+}
+
+async function connectWallet(type) {
+    let provider = null;
+
+    // Find the right provider
+    if (window.ethereum?.providers) {
+        // Multiple wallet extensions installed
+        for (const p of window.ethereum.providers) {
+            if (type === 'metamask' && p.isMetaMask) { provider = p; break; }
+            if (type === 'trust' && p.isTrust) { provider = p; break; }
+            if (type === 'safepal' && p.isSafePal) { provider = p; break; }
+        }
+    }
+
+    if (!provider) {
+        if (type === 'trust' && window.trustwallet?.ethereum) {
+            provider = window.trustwallet.ethereum;
+        } else if (type === 'safepal' && window.safepalProvider) {
+            provider = window.safepalProvider;
+        } else if (window.ethereum) {
+            provider = window.ethereum;
+        }
+    }
+
+    if (!provider) {
+        const links = {
+            metamask: 'https://metamask.io/download/',
+            trust: 'https://trustwallet.com/download',
+            safepal: 'https://www.safepal.com/download'
+        };
+        log(`${type} not detected. Install it from the official website.`, 'w');
+        window.open(links[type], '_blank');
+        return;
+    }
+
+    try {
+        log(`Connecting to ${type}...`, 'i');
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
+
+        if (accounts && accounts.length > 0) {
+            connectedAddress = accounts[0];
+            connectedWallet = type;
+            walletProvider = provider;
+
+            const chainId = await provider.request({ method: 'eth_chainId' });
+            const chainName = CHAIN_NAMES[chainId] || `Chain ${parseInt(chainId, 16)}`;
+
+            // Get balance
+            const balHex = await provider.request({ method: 'eth_getBalance', params: [connectedAddress, 'latest'] });
+            const balEth = parseInt(balHex, 16) / 1e18;
+
+            showConnectedWallet(type, connectedAddress, balEth, chainName, chainId);
+            log(`${type} connected: ${connectedAddress.slice(0,6)}...${connectedAddress.slice(-4)} on ${chainName}`, 's');
+            speak(`${type} wallet connected`);
+
+            // Listen for account/chain changes
+            provider.on('accountsChanged', (accs) => {
+                if (accs.length === 0) { disconnectWallet(); }
+                else { connectedAddress = accs[0]; refreshWalletDisplay(); }
+            });
+
+            provider.on('chainChanged', () => { refreshWalletDisplay(); });
+        }
+    } catch (e) {
+        if (e.code === 4001) {
+            log('Connection rejected by user', 'w');
+        } else {
+            log(`Wallet error: ${e.message}`, 'e');
+        }
+    }
+}
+
+async function refreshWalletDisplay() {
+    if (!walletProvider || !connectedAddress) return;
+    try {
+        const chainId = await walletProvider.request({ method: 'eth_chainId' });
+        const chainName = CHAIN_NAMES[chainId] || `Chain ${parseInt(chainId, 16)}`;
+        const balHex = await walletProvider.request({ method: 'eth_getBalance', params: [connectedAddress, 'latest'] });
+        const balEth = parseInt(balHex, 16) / 1e18;
+        showConnectedWallet(connectedWallet, connectedAddress, balEth, chainName, chainId);
+    } catch (e) { console.error('Refresh wallet error:', e); }
+}
+
+function showConnectedWallet(type, address, balance, chainName, chainId) {
+    const names = { metamask: 'MetaMask', trust: 'Trust Wallet', safepal: 'SafePal' };
+    document.getElementById('walletConnect').style.display = 'none';
+    document.getElementById('walletConnected').style.display = 'block';
+    document.getElementById('walletProviderName').textContent = names[type] || type;
+
+    const shortAddr = address.slice(0, 6) + '…' + address.slice(-4);
+
+    document.getElementById('walletDetails').innerHTML = `
+        <div class="wallet-row"><span class="wallet-k">Address</span><span class="wallet-v">${shortAddr}</span></div>
+        <div class="wallet-row"><span class="wallet-k">Chain</span><span class="wallet-v">${chainName}</span></div>
+        <div class="wallet-row"><span class="wallet-k">Balance</span><span class="wallet-v">${balance.toFixed(6)} ${chainId === '0x38' ? 'BNB' : 'ETH'}</span></div>
+        <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="ctrl-btn" onclick="switchChain('0x1')" style="font-size:9px;padding:5px 10px">Ethereum</button>
+            <button class="ctrl-btn" onclick="switchChain('0x2105')" style="font-size:9px;padding:5px 10px">Base</button>
+            <button class="ctrl-btn" onclick="switchChain('0x38')" style="font-size:9px;padding:5px 10px">BNB</button>
+        </div>`;
+}
+
+function disconnectWallet() {
+    connectedWallet = null;
+    connectedAddress = null;
+    walletProvider = null;
+    document.getElementById('walletConnect').style.display = 'flex';
+    document.getElementById('walletConnected').style.display = 'none';
+    log('Wallet disconnected', 'i');
+}
+
+async function switchChain(chainId) {
+    if (!walletProvider) return;
+    try {
+        await walletProvider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
+        log(`Switched to ${CHAIN_NAMES[chainId] || chainId}`, 's');
+    } catch (e) {
+        if (e.code === 4902) {
+            // Chain not added — add it
+            const chainData = {
+                '0x2105': { chainId: '0x2105', chainName: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: ['https://basescan.org'] },
+                '0x38': { chainId: '0x38', chainName: 'BNB Smart Chain', nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }, rpcUrls: ['https://bsc-dataseed1.binance.org'], blockExplorerUrls: ['https://bscscan.com'] },
+            };
+            if (chainData[chainId]) {
+                try {
+                    await walletProvider.request({ method: 'wallet_addEthereumChain', params: [chainData[chainId]] });
+                    log(`Added and switched to ${CHAIN_NAMES[chainId]}`, 's');
+                } catch (e2) { log(`Failed to add chain: ${e2.message}`, 'e'); }
+            }
+        } else {
+            log(`Chain switch failed: ${e.message}`, 'e');
+        }
+    }
+}
+
+async function rWallet() {
+    // If browser wallet connected, skip API wallet
+    if (connectedAddress) {
+        await refreshWalletDisplay();
+        return;
+    }
+    // Fallback: check server-side wallet
+    const d = await api('/wallet');
+    if (!d || d.error) return; // Wallet connect buttons already showing
+    const addr = d.address || '';
+    if (!addr) return;
+    const sh = addr.length > 10 ? addr.slice(0,6)+'…'+addr.slice(-4) : addr;
+    const eth = typeof d.eth_balance === 'number' ? d.eth_balance.toFixed(6) : '—';
+    const usdc = typeof d.usdc_balance === 'number' ? d.usdc_balance.toFixed(2) : '—';
+    document.getElementById('walletConnect').style.display = 'none';
+    document.getElementById('walletConnected').style.display = 'block';
+    document.getElementById('walletProviderName').textContent = 'Server Wallet';
+    document.getElementById('walletDetails').innerHTML = `
+        <div class="wallet-row"><span class="wallet-k">Address</span><span class="wallet-v">${sh}</span></div>
+        <div class="wallet-row"><span class="wallet-k">ETH</span><span class="wallet-v">${eth}</span></div>
+        <div class="wallet-row"><span class="wallet-k">USDC</span><span class="wallet-v">${usdc}</span></div>`;
+}
+
+// Detect wallets on load
+setTimeout(detectWallets, 500);
+
+async function rMemory(){const d=await api('/memory');if(d){const c=d.total||d.total_entries||d.total_decisions||d.count||Object.keys(d).length||0;document.getElementById('mMemory').textContent=c}}
+
+async function rChains(){const d=await api('/chains');const el=document.getElementById('chainsRow'),mEl=document.getElementById('mChains');if(!d||typeof d!=='object'){el.innerHTML='<div class="empty">No chain data</div>';return}
+const entries=Object.entries(d);mEl.textContent=entries.filter(([,v])=>v.connected).length;
+el.innerHTML=entries.map(([k,c])=>`<div class="chain-card"><div class="chain-head"><span class="chain-name">${c.name||k}</span><div class="chain-dot ${c.connected?'on':'off'}"></div></div><div class="chain-detail">Block ${c.block||'—'}<br>Gas ${c.gas_gwei||'—'} gwei<br>Perps: ${c.perp_dex||'—'}</div></div>`).join('')}
+
+async function rPos(){let pos=[];const lev=await api('/leverage/positions');if(Array.isArray(lev))pos=pos.concat(lev);const bf=await api('/blofin/positions');if(Array.isArray(bf))pos=pos.concat(bf);
+const el=document.getElementById('posArea'),cnt=document.getElementById('posCount'),mEl=document.getElementById('mPositions');mEl.textContent=pos.length;cnt.textContent=pos.length;
+if(!pos.length){el.innerHTML='<div class="empty">No open positions</div>';return}
+el.innerHTML=`<table class="pos-table"><thead><tr><th>Pair</th><th>Side</th><th>Size</th><th>Entry</th><th>PnL</th></tr></thead><tbody>${pos.map(p=>{const side=p.side||'—';const sc=side==='long'||side==='buy'?'side-long':'side-short';const pnl=parseFloat(p.unrealized_pnl||p.upl||0);const pc=pnl>=0?'pnl-pos':'pnl-neg';return`<tr><td>${p.symbol||p.inst_id||'—'}</td><td><span class="${sc}">${side.toUpperCase()}</span></td><td>${p.size_usd||p.size||p.positions||'—'}</td><td>$${parseFloat(p.entry_price||p.avgPx||0).toFixed(2)}</td><td class="${pc}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</td></tr>`}).join('')}</tbody></table>`}
+
+function log(msg,type='i'){const el=document.getElementById('logArea');const t=new Date().toLocaleTimeString();const d=document.createElement('div');d.className=`log-${type}`;d.textContent=`${t}  ${msg}`;el.appendChild(d);el.scrollTop=el.scrollHeight;if(ttsOn&&(type==='s'||type==='e')&&!msg.includes('API')&&!msg.includes('Server'))speak(msg)}
+
+let recognition=null,listening=false,ttsOn=true;const synth=window.speechSynthesis;let voice=null;
+function initV(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';recognition.onstart=()=>{listening=true;document.getElementById('micBtn').classList.add('listening')};recognition.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;document.getElementById('cmdInput').value=t;if(e.results[e.results.length-1].isFinal){log(`Heard: "${t}"`,'i');procV(t)}};recognition.onend=()=>{listening=false;document.getElementById('micBtn').classList.remove('listening')};recognition.onerror=()=>{listening=false;document.getElementById('micBtn').classList.remove('listening')}}
+function toggleVoice(){if(!recognition)initV();if(!recognition)return;listening?recognition.stop():recognition.start()}
+function procV(t){const c=t.toLowerCase();if(c.includes('start all'))startAll();else if(c.includes('stop all'))stopAll();else if(c.includes('status'))spkStatus();else send()}
+function speak(t){if(!ttsOn||!synth)return;synth.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=1.05;u.pitch=0.95;if(voice)u.voice=voice;synth.speak(u)}
+function toggleTTS(){ttsOn=!ttsOn;document.getElementById('voiceToggle').textContent=ttsOn?'🔊 Voice On':'🔇 Voice Off';if(ttsOn)speak('Voice enabled')}
+async function spkStatus(){const d=await api('/status');if(!d){speak('Server offline');return}speak(`${agentIds.length} agents active. System ${d.safety?.dry_run?'in dry run':'live'}.`)}
+function loadV(){const v=synth?.getVoices()||[];voice=v.find(x=>x.name.includes('Google')&&x.lang.startsWith('en'))||v.find(x=>x.lang.startsWith('en'))||v[0]}
+loadV();if(synth?.onvoiceschanged!==undefined)synth.onvoiceschanged=loadV;
+
+document.getElementById('cmdInput').addEventListener('keypress',e=>{if(e.key==='Enter')send()});
+
+// ── THEME TOGGLE ──
+let isDark = true;
+function toggleTheme() {
+    isDark = !isDark;
+    document.documentElement.classList.toggle('light', !isDark);
+    document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+    try { localStorage.setItem('orcl-theme', isDark ? 'dark' : 'light'); } catch(e) {}
+}
+// Load saved theme
+try {
+    const saved = localStorage.getItem('orcl-theme');
+    if (saved === 'light') { isDark = false; document.documentElement.classList.add('light'); document.getElementById('themeBtn').textContent = '☀️'; }
+} catch(e) {}
+
+refresh();setInterval(refresh,8000);log('ORCL protocol initialized','i');
+setTimeout(()=>speak('ORCL online. Ready for commands.'),1200);
+</script>
+</body>
+</html>

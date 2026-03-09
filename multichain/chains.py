@@ -25,7 +25,7 @@ CHAINS = {
     "ethereum": {
         "name": "Ethereum",
         "chain_id": 1,
-        "rpc_url": "https://eth.llamarpc.com",
+        "rpc_url": "https://eth.drpc.org",
         "explorer": "https://etherscan.io",
         "native_token": "ETH",
         "wrapped_native": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
